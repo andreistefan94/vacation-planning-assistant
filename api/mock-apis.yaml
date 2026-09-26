@@ -1,0 +1,1146 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Vacation Assistant Mock APIs",
+    "version": "1.0.0",
+    "description": "Mock flights (Amadeus), hotels (Amadeus), weather (Open-Meteo) and calendar (Google Calendar) APIs for the vacation-planning assistant project. Deterministic/synthetic data - see each route for the real API it mirrors."
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "AmadeusToken": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "amadeusOAuth2Token"
+          },
+          "username": {
+            "type": "string"
+          },
+          "application_name": {
+            "type": "string"
+          },
+          "client_id": {
+            "type": "string"
+          },
+          "token_type": {
+            "type": "string",
+            "example": "Bearer"
+          },
+          "access_token": {
+            "type": "string"
+          },
+          "expires_in": {
+            "type": "integer",
+            "example": 1799
+          },
+          "state": {
+            "type": "string",
+            "example": "approved"
+          },
+          "scope": {
+            "type": "string"
+          }
+        }
+      },
+      "AmadeusError": {
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "integer"
+                },
+                "code": {
+                  "type": "integer"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "detail": {
+                  "type": "string"
+                },
+                "source": {
+                  "type": "object",
+                  "properties": {
+                    "parameter": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Hotel": {
+        "type": "object",
+        "properties": {
+          "chainCode": {
+            "type": "string",
+            "example": "MC"
+          },
+          "iataCode": {
+            "type": "string",
+            "example": "PAR"
+          },
+          "dupeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "example": "Marriott Grand Paris"
+          },
+          "hotelId": {
+            "type": "string",
+            "example": "MCPAR00X"
+          },
+          "geoCode": {
+            "type": "object",
+            "properties": {
+              "latitude": {
+                "type": "number"
+              },
+              "longitude": {
+                "type": "number"
+              }
+            }
+          },
+          "address": {
+            "type": "object",
+            "properties": {
+              "countryCode": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "Location": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "location"
+          },
+          "subType": {
+            "type": "string",
+            "enum": [
+              "CITY",
+              "AIRPORT"
+            ]
+          },
+          "iataCode": {
+            "type": "string",
+            "example": "FCO"
+          },
+          "name": {
+            "type": "string",
+            "example": "ROME FIUMICINO"
+          },
+          "address": {
+            "type": "object",
+            "properties": {
+              "cityName": {
+                "type": "string",
+                "example": "Rome"
+              },
+              "cityCode": {
+                "type": "string",
+                "example": "ROM"
+              },
+              "countryCode": {
+                "type": "string"
+              }
+            }
+          },
+          "geoCode": {
+            "type": "object",
+            "properties": {
+              "latitude": {
+                "type": "number"
+              },
+              "longitude": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      },
+      "LocationSearchResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Location"
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "count": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "HotelListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Hotel"
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "count": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "HotelOffer": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "hotel-offers"
+          },
+          "hotel": {
+            "type": "object",
+            "properties": {
+              "hotelId": {
+                "type": "string"
+              },
+              "chainCode": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "cityCode": {
+                "type": "string"
+              },
+              "latitude": {
+                "type": "number"
+              },
+              "longitude": {
+                "type": "number"
+              }
+            }
+          },
+          "available": {
+            "type": "boolean"
+          },
+          "offers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "checkInDate": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "checkOutDate": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "room": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "STANDARD",
+                        "SUPERIOR",
+                        "DELUXE",
+                        "SUITE"
+                      ]
+                    }
+                  }
+                },
+                "guests": {
+                  "type": "object",
+                  "properties": {
+                    "adults": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "price": {
+                  "type": "object",
+                  "properties": {
+                    "currency": {
+                      "type": "string",
+                      "example": "EUR"
+                    },
+                    "base": {
+                      "type": "string"
+                    },
+                    "total": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "HotelOffersResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HotelOffer"
+            }
+          }
+        }
+      },
+      "FlightSegment": {
+        "type": "object",
+        "properties": {
+          "departure": {
+            "type": "object",
+            "properties": {
+              "iataCode": {
+                "type": "string"
+              },
+              "at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "arrival": {
+            "type": "object",
+            "properties": {
+              "iataCode": {
+                "type": "string"
+              },
+              "at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "carrierCode": {
+            "type": "string",
+            "example": "AF"
+          },
+          "number": {
+            "type": "string"
+          },
+          "aircraft": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              }
+            }
+          },
+          "duration": {
+            "type": "string",
+            "example": "PT8H15M"
+          },
+          "numberOfStops": {
+            "type": "integer"
+          }
+        }
+      },
+      "FlightOffer": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "flight-offer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "example": "GDS"
+          },
+          "lastTicketingDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "numberOfBookableSeats": {
+            "type": "integer"
+          },
+          "itineraries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "duration": {
+                  "type": "string"
+                },
+                "segments": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FlightSegment"
+                  }
+                }
+              }
+            }
+          },
+          "price": {
+            "type": "object",
+            "properties": {
+              "currency": {
+                "type": "string"
+              },
+              "total": {
+                "type": "string"
+              },
+              "base": {
+                "type": "string"
+              },
+              "grandTotal": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "FlightOffersResponse": {
+        "type": "object",
+        "properties": {
+          "meta": {
+            "type": "object",
+            "properties": {
+              "count": {
+                "type": "integer"
+              }
+            }
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlightOffer"
+            }
+          },
+          "dictionaries": {
+            "type": "object"
+          }
+        }
+      },
+      "FlightOffersRequest": {
+        "type": "object",
+        "required": [
+          "originDestinations"
+        ],
+        "properties": {
+          "originDestinations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "originLocationCode": {
+                  "type": "string",
+                  "example": "PAR"
+                },
+                "destinationLocationCode": {
+                  "type": "string",
+                  "example": "NYC"
+                },
+                "departureDateTimeRange": {
+                  "type": "object",
+                  "properties": {
+                    "date": {
+                      "type": "string",
+                      "format": "date"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "travelers": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "WeatherForecastResponse": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "elevation": {
+            "type": "number"
+          },
+          "generationtime_ms": {
+            "type": "number"
+          },
+          "utc_offset_seconds": {
+            "type": "integer"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "timezone_abbreviation": {
+            "type": "string"
+          },
+          "daily_units": {
+            "type": "object",
+            "properties": {
+              "temperature_2m_max": {
+                "type": "string",
+                "example": "°C"
+              },
+              "temperature_2m_min": {
+                "type": "string",
+                "example": "°C"
+              },
+              "precipitation_sum": {
+                "type": "string",
+                "example": "mm"
+              }
+            }
+          },
+          "daily": {
+            "type": "object",
+            "properties": {
+              "time": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "date"
+                }
+              },
+              "temperature_2m_max": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "temperature_2m_min": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "precipitation_sum": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      },
+      "CalendarEventDateTime": {
+        "type": "object",
+        "description": "Either 'date' (all-day) or 'dateTime' (timed), matching Google Calendar's EventDateTime.",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "dateTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CalendarEvent": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "example": "calendar#event"
+          },
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "example": "confirmed"
+          },
+          "htmlLink": {
+            "type": "string"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "start": {
+            "$ref": "#/components/schemas/CalendarEventDateTime"
+          },
+          "end": {
+            "$ref": "#/components/schemas/CalendarEventDateTime"
+          }
+        }
+      },
+      "CalendarEventsListResponse": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "example": "calendar#events"
+          },
+          "etag": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string",
+            "description": "Echoes the calendarId"
+          },
+          "updated": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "timeZone": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalendarEvent"
+            }
+          }
+        }
+      },
+      "CalendarEventInsertRequest": {
+        "type": "object",
+        "required": [
+          "summary",
+          "start",
+          "end"
+        ],
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "start": {
+            "$ref": "#/components/schemas/CalendarEventDateTime"
+          },
+          "end": {
+            "$ref": "#/components/schemas/CalendarEventDateTime"
+          }
+        }
+      },
+      "GoogleAuthError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "integer",
+                "example": 401
+              },
+              "message": {
+                "type": "string",
+                "example": "Login Required."
+              },
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/security/oauth2/token": {
+      "post": {
+        "tags": [
+          "Flights & Hotels (Amadeus)"
+        ],
+        "summary": "Get an access token",
+        "description": "Mirrors Amadeus's OAuth2 token endpoint. Accepts any client_id/client_secret - this mock does not validate credentials.",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "grant_type": {
+                    "type": "string",
+                    "example": "client_credentials"
+                  },
+                  "client_id": {
+                    "type": "string"
+                  },
+                  "client_secret": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AmadeusToken"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reference-data/locations": {
+      "get": {
+        "tags": [
+          "Flights & Hotels (Amadeus)"
+        ],
+        "summary": "Search airports/cities by keyword",
+        "description": "Mirrors Amadeus Airport & City Search (`/v1/reference-data/locations`) - resolves an airport code or city name to its Amadeus CITY code (e.g. FCO/Rome -\u003E ROM), so a caller doesn't have to guess whether a code it has is a city or an airport code. Matching is a case-insensitive EXACT match on `keyword` against either the IATA code or the city name (not the real API's fuzzy prefix search) - a mock simplification for determinism. `subType` is accepted for shape-compatibility with the real API but not filtered server-side; every matching entry's own `subType` is returned so the caller can filter client-side.",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Rome"
+            },
+            "description": "City name or IATA code (case-insensitive, exact match)"
+          },
+          {
+            "name": "subType",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "CITY,AIRPORT"
+            },
+            "description": "Accepted but not filtered server-side - see description"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.amadeus+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationSearchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "keyword missing",
+            "content": {
+              "application/vnd.amadeus+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AmadeusError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reference-data/locations/hotels/by-city": {
+      "get": {
+        "tags": [
+          "Flights & Hotels (Amadeus)"
+        ],
+        "summary": "List hotels in a city",
+        "description": "Mirrors Amadeus Hotel List v1 (`/v1/reference-data/locations/hotels/by-city`). 163 real IATA city codes are seeded, 12 hotels each.",
+        "parameters": [
+          {
+            "name": "cityCode",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "PAR"
+            },
+            "description": "3-letter IATA city code"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.amadeus+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HotelListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "cityCode missing/invalid",
+            "content": {
+              "application/vnd.amadeus+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AmadeusError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/shopping/hotel-offers": {
+      "get": {
+        "tags": [
+          "Flights & Hotels (Amadeus)"
+        ],
+        "summary": "Get offers for specific hotels",
+        "description": "Mirrors Amadeus Hotel Search v3 (`/v3/shopping/hotel-offers`). Look up hotelIds via the by-city endpoint first.",
+        "parameters": [
+          {
+            "name": "hotelIds",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated hotel IDs, e.g. MCPAR00X,HIPAR01X"
+          },
+          {
+            "name": "checkInDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "checkOutDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "adults",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.amadeus+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HotelOffersResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "hotelIds missing",
+            "content": {
+              "application/vnd.amadeus+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AmadeusError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/shopping/flight-offers": {
+      "get": {
+        "tags": [
+          "Flights & Hotels (Amadeus)"
+        ],
+        "summary": "Search flight offers (query params)",
+        "description": "Mirrors Amadeus Flight Offers Search v2 GET (`/v2/shopping/flight-offers`). Works for any origin/destination - responses are synthesized.",
+        "parameters": [
+          {
+            "name": "originLocationCode",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "PAR"
+            }
+          },
+          {
+            "name": "destinationLocationCode",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "NYC"
+            }
+          },
+          {
+            "name": "departureDate",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "adults",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.amadeus+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlightOffersResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Flights & Hotels (Amadeus)"
+        ],
+        "summary": "Search flight offers (JSON body)",
+        "description": "Mirrors Amadeus Flight Offers Search v2 POST. Works for any origin/destination - responses are synthesized.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightOffersRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.amadeus+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlightOffersResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/forecast": {
+      "get": {
+        "tags": [
+          "Weather (Open-Meteo)"
+        ],
+        "summary": "7-day weather forecast",
+        "description": "Mirrors the real, free, no-auth Open-Meteo Forecast API (`/v1/forecast`).",
+        "parameters": [
+          {
+            "name": "latitude",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "longitude",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Defaults to today if omitted"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeatherForecastResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/calendar/v3/calendars/{calendarId}/events": {
+      "get": {
+        "tags": [
+          "Calendar (Google Calendar)"
+        ],
+        "summary": "List events on a calendar",
+        "description": "Mirrors Google Calendar API v3 `events.list`. Two seeded calendars: `primary` (busy every day Sep 1-Dec 17 2026 except three free windows) and `demo@user.com`.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "calendarId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "primary"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarEventsListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid Bearer token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoogleAuthError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Calendar (Google Calendar)"
+        ],
+        "summary": "Insert an event",
+        "description": "Mirrors Google Calendar API v3 `events.insert`. Persists in-memory for the container's lifetime (resets on redeploy/restart). Any non-empty Bearer token is accepted.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "calendarId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "primary"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalendarEventInsertRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarEvent"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing/invalid Bearer token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoogleAuthError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Meta"
+        ],
+        "summary": "Health check",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  }
+}

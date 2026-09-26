@@ -1,0 +1,565 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Vacation Planning Assistant API",
+    "description": "Conversational API for an AI vacation-planning assistant (enunt.txt §1).\n\nGeneral principles:\n- HTTP, chatbot-style: one message in, one message out; a conversation spans several successive POST /chat calls.\n- No front-end-specific assumptions - callable equally from a UI, automated tests, an LLM-as-a-Judge harness, or the arena.\n- `conversation_id` (session identity, short-term state) and `user_id` (long-term preferences, reused across conversations) are separate identifiers.\n- The workflow can pause in an explicit waiting state (human-in-the-loop, see ChatResponse.status/pending_approval) and must resume from where it paused, not from the start.\n- All endpoints respond with JSON; real failures use 4xx/5xx status codes, never a 200 with an error embedded in the body.\n",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "description": "Liveness check, no authentication.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat": {
+      "post": {
+        "summary": "Chat",
+        "description": "Send a user message (or their answer to a pending approval) and get the\nassistant's reply. Pass `conversation_id` back on every following turn of\nthe same conversation to continue it; omit it (null) to start a new one.",
+        "operationId": "chat_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conversations/{conversation_id}": {
+      "get": {
+        "summary": "Get History",
+        "description": "Full transcript of one conversation - for debugging, automated tests,\nand evaluation. Each message optionally carries the additive\n`tool_calls`/`tool_call_id` debug-trace fields; see HistoryMessage.\n404 if the conversation_id is unknown.",
+        "operationId": "get_history_conversations__conversation_id__get",
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "A conversation_id previously returned by POST /chat.",
+              "title": "Conversation Id"
+            },
+            "description": "A conversation_id previously returned by POST /chat."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{user_id}/conversations": {
+      "get": {
+        "summary": "List User Conversations",
+        "description": "List this user's conversations, newest first - lets a UI offer a pick-\none-to-resume list instead of requiring a conversation_id to already be\nknown. **Optional and additive**, outside the base §1 contract: tracking\nwhich conversations belong to which user is extra bookkeeping, not an\nintrinsic requirement of session state (which can be kept solely on\nconversation_id, with no per-user index). An implementation that doesn't\noffer this may return 404; a client should treat 404 here as \"not\nimplemented\", not as an error, and fall back to manual conversation_id\nentry. Returns an empty list (not 404) for a known user_id with no\nconversations yet.",
+        "operationId": "list_user_conversations_users__user_id__conversations_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Same user_id used in POST /chat.",
+              "title": "User Id"
+            },
+            "description": "Same user_id used in POST /chat."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{user_id}/preferences": {
+      "get": {
+        "summary": "Get User Preferences",
+        "description": "Long-term preferences remembered for this user across conversations\n(enunt.txt §2.4). Empty list if none are stored.",
+        "operationId": "get_user_preferences_users__user_id__preferences_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Same user_id used in POST /chat.",
+              "title": "User Id"
+            },
+            "description": "Same user_id used in POST /chat."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete User Preferences",
+        "description": "Forget all of this user's long-term preferences - explicit user control\nover memory (enunt.txt §2.4).",
+        "operationId": "delete_user_preferences_users__user_id__preferences_delete",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Same user_id used in POST /chat.",
+              "title": "User Id"
+            },
+            "description": "Same user_id used in POST /chat."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Delete User Preferences Users  User Id  Preferences Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ChatRequest": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "description": "Stable identifier for long-term memory/preferences."
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Id",
+            "description": "Omit to start a new conversation; pass it back on every following turn."
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "The user's message, or their answer to a pending approval request."
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "message"
+        ],
+        "title": "ChatRequest"
+      },
+      "ChatResponse": {
+        "properties": {
+          "conversation_id": {
+            "type": "string",
+            "title": "Conversation Id",
+            "description": "Echoes the request's conversation_id, or a newly generated one if it was omitted."
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "reply": {
+            "type": "string",
+            "title": "Reply",
+            "description": "The assistant's message to show the user."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "awaiting_approval"
+            ],
+            "title": "Status",
+            "description": "'awaiting_approval' means the workflow is suspended pending an explicit human decision."
+          },
+          "pending_approval": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PendingApproval"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Only present when status=='awaiting_approval'."
+          }
+        },
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "user_id",
+          "reply",
+          "status"
+        ],
+        "title": "ChatResponse"
+      },
+      "ConversationListResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "conversations": {
+            "items": {
+              "$ref": "#/components/schemas/ConversationSummary"
+            },
+            "type": "array",
+            "title": "Conversations",
+            "description": "Newest first (by last_message_at)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "ConversationListResponse",
+        "description": "Response for GET /users/{user_id}/conversations - see that endpoint's\ndocstring in main.py for why this whole endpoint is optional."
+      },
+      "ConversationSummary": {
+        "properties": {
+          "conversation_id": {
+            "type": "string",
+            "title": "Conversation Id",
+            "description": "Use as-is in a following POST /chat to resume this conversation."
+          },
+          "started_at": {
+            "type": "string",
+            "title": "Started At",
+            "description": "ISO 8601 timestamp of this conversation's first turn."
+          },
+          "last_message_at": {
+            "type": "string",
+            "title": "Last Message At",
+            "description": "ISO 8601 timestamp of this conversation's most recent turn."
+          },
+          "preview": {
+            "type": "string",
+            "title": "Preview",
+            "description": "Truncated first user message - just a label, not the full transcript.",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "started_at",
+          "last_message_at"
+        ],
+        "title": "ConversationSummary"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HistoryMessage": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant",
+              "system",
+              "tool"
+            ],
+            "title": "Role"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content",
+            "description": "The message text; for role=='tool', the tool's result. May be empty on an assistant message that is only issuing tool call(s), with no text for the user.",
+            "default": ""
+          },
+          "tool_calls": {
+            "items": {
+              "$ref": "#/components/schemas/ToolCall"
+            },
+            "type": "array",
+            "title": "Tool Calls",
+            "description": "Present on an assistant message that invokes one or more tools - one entry per call, several entries for parallel calls on the same turn. Empty for an ordinary text turn."
+          },
+          "tool_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Call Id",
+            "description": "On a role=='tool' message: the id of the ToolCall (see tool_calls above) this is the result of."
+          }
+        },
+        "type": "object",
+        "required": [
+          "role"
+        ],
+        "title": "HistoryMessage",
+        "description": "One message in a GET /conversations/{id} transcript.\n\n`tool_calls`/`tool_call_id` are an **optional, additive** debug-trace\nextension (enunt.txt §2.1: \"apeluri secvențiale și paralele\", \"mecanisme\nde retry și fallback\") - a response that omits them (leaves them empty/\nnull) is still a fully valid, contract-compliant response, just one\nwhere automated evaluation can only tell *that* some tool ran\n(`role == \"tool\"` messages exist), not *which* one, with what arguments,\nor whether an error was retried."
+      },
+      "HistoryResponse": {
+        "properties": {
+          "conversation_id": {
+            "type": "string",
+            "title": "Conversation Id"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryMessage"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "messages"
+        ],
+        "title": "HistoryResponse"
+      },
+      "PendingApproval": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "title": "Question",
+            "description": "The decision/approval being asked of the user."
+          },
+          "options": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Options",
+            "description": "Concrete choices, if any; empty for a plain yes/no approval."
+          }
+        },
+        "type": "object",
+        "required": [
+          "question"
+        ],
+        "title": "PendingApproval",
+        "description": "Present on a ChatResponse only when status=='awaiting_approval': an\nexplicit human-in-the-loop interrupt (enunt.txt §2.2), not just an\nordinary clarifying question. Resume by sending the user's decision as\nthe next /chat call's `message`, with the same `conversation_id`."
+      },
+      "PreferencesResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "preferences": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Preferences",
+            "description": "Long-term preferences remembered for this user (enunt.txt §2.4)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "PreferencesResponse"
+      },
+      "ToolCall": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique id for this call; echoed as tool_call_id on its result message."
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Tool name. Not part of the contract as an exact string - automated evaluation matches it fuzzily/by keyword (e.g. contains 'flight'), never against a hardcoded name, since naming is implementation-specific."
+          },
+          "args": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Args",
+            "description": "Arguments the tool was called with."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "ToolCall",
+        "description": "One tool invocation issued by an assistant turn (OpenAI/Anthropic-style\ntool_calls shape). `id` is echoed back as `tool_call_id` on the matching\n`role: \"tool\"` message, so a call and its result are linked exactly -\nincluding when several calls happen in parallel on the same turn."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
